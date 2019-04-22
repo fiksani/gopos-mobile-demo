@@ -23,6 +23,11 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
 
   List<Product> _products = [];
+  Set<Product> _shoppingListCart = Set<Product>();
+
+  void _handleCartChanged(cart) {
+    _shoppingListCart = cart;
+  }
 
   Future<List <Product>> _fetchProduct() async {
     final response = await http.get('http://localhost:8000/api/products');
@@ -34,16 +39,17 @@ class _HomePageState extends State<HomePage> {
     return [];
   }
 
-Future<Order> createOrder(String url, {Map body}) async {
-  return http.post(url, body: body).then((http.Response response) {
-    final int statusCode = response.statusCode;
- 
-    if (statusCode < 200 || statusCode > 400 || json == null) {
-      throw new Exception("Error while fetching data");
-    }
-    return Product.fromJson(json.decode(response.body));
-  });
-}
+  Future<void> createOrder(String url, {Map<String, dynamic> body}) async {
+    http.post(url, body: json.encode(body), headers: {"content-type":"application/json"}).then((http.Response response) {
+      final int statusCode = response.statusCode;
+  
+      if (statusCode < 200 || statusCode > 400 || json == null) {
+        throw new Exception("Error while fetching data");
+      }
+
+      Navigator.pushReplacementNamed(context, '/login');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +74,7 @@ Future<Order> createOrder(String url, {Map body}) async {
           if (snapshot.hasError) return Text(snapshot.error);
 
           return snapshot.hasData
-            ? ProductsList(products: snapshot.data)
+            ? ProductsList(products: snapshot.data, onCartChanged: _handleCartChanged)
             : Center(child: CircularProgressIndicator());
         },
       ),
@@ -76,7 +82,15 @@ Future<Order> createOrder(String url, {Map body}) async {
         padding: EdgeInsets.all(20.0),
         child: RaisedButton.icon(
           onPressed: () {
-
+            createOrder(
+              'http://localhost:8000/api/orders',
+              body: {
+                'name': widget.name,
+                'table_number': widget.table,
+                'items': _shoppingListCart.map((product) => {'product': product.id.toString()}).toList()
+                ,
+              }
+            );
           },
           elevation: 2.0,
           shape: new RoundedRectangleBorder(

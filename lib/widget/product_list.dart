@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import '../model/product.dart';
 import 'product_list_item.dart';
 
+typedef void HandleCartChange(Set<Product> cart);
+
 class ProductsList extends StatefulWidget {
-  ProductsList({Key key, this.products}): super(key: key);
+  ProductsList({Key key, this.products, this.onCartChanged}): super(key: key);
 
   final List<Product> products;
+  final HandleCartChange onCartChanged;
 
   @override
   State<StatefulWidget> createState() {
@@ -25,6 +28,7 @@ class _ProductsListState extends State<ProductsList> {
       } else {
         _shoppingListCart.remove(product);
       }
+      widget.onCartChanged(_shoppingListCart);
     });
   }
 
